@@ -25,7 +25,8 @@ const tools = {
             font: fonts[0],
             size: 50,
             color: "black",
-            text: "word"
+            text: "word",
+            stroke: 0
         }
     }
 }
@@ -37,11 +38,13 @@ var textInput;
 var textTool;
 var selectTool;
 
+var mouseDown = false;
+
 var radio;
 
 function setup() {
     let canvas = createCanvas(400, 400);
-    canvas.mouseClicked(msClicked);
+    canvas.mousePressed(msClicked);
 
     textTool = createButton('T');
     textTool.mousePressed(textToolBtn);
@@ -51,20 +54,37 @@ function setup() {
 
     radio = createRadio();
     radio.style('width', 'auto');
+    radio.changed(radioUpdate);
 
 }
-  
+
 function draw() {
     background(220);
     if (layers.length > 0) {
         layers.forEach((layer, index) => {
             layer.draw();
-             radio.option(index + " - " + layer.params.text);
+            if (!radio.selected(`${index}`)) {
+                radio.option(index, index + " - " + layer.params.text);
+            }
         })
+    }
+    if (tool == tools.selection) {
+        if (mouseIsPressed && mouseDown == true) {
+            selectLayer();
+        }
     }
 }
 
+function radioUpdate() {
+    layerHighlight();
+}
+
+function mouseReleased() {
+    mouseDown = false;
+}
+
 function msClicked() {
+    mouseDown = true;
     if (tool) {
         tool.action(mouseX, mouseY);
     }
@@ -82,6 +102,16 @@ function selectToolBtn() {
 
 function selectLayer() {
     layers[radio.value()? radio.value().charAt(0) : 0].params.position = createVector(mouseX, mouseY);
+    layerHighlight();
+}
+
+function layerHighlight(removeAll) {
+    layers.forEach(layer => {
+        layer.params.stroke = 0;
+    });
+    if (removeAll != true) {
+        layers[radio.value()? radio.value().charAt(0) : 0].params.stroke = 5;
+    }
 }
 
 function createText(x, y) {
@@ -90,6 +120,8 @@ function createText(x, y) {
 
     let layer = { 
         draw: function() {
+            stroke(255, 255, 200);
+            strokeWeight(this.params.stroke);
             textAlign(CENTER);
             textSize(this.params.size);
             textFont(this.params.font);
@@ -99,7 +131,9 @@ function createText(x, y) {
         params: {...tool.params}
     }
     layers.push(layer);
+    radio.value(`${layers.length}`);
     selectToolBtn();
+    mouseDown = false;
 }
 
 
@@ -135,11 +169,12 @@ function textToolStart() {
 
     textInput = createInput('word')
     textInput.input(textInputed);
+
+    layerHighlight(true);
 }
 
 function selectToolStart() {
     resetElements();
-    console.log("Selection tool selected");
 }
 
 function resetElements() {
