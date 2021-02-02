@@ -44,7 +44,14 @@ var radio;
 
 function setup() {
     let canvas = createCanvas(400, 400);
+    canvas.parent('app');
+    canvas.addClass('canvas');
     canvas.mousePressed(msClicked);
+
+    // let layers = createDiv();
+    // layers.parent('app');
+    // layers.addClass('layers');
+    // layers.id('layers');
 
     textTool = createButton('T');
     textTool.mousePressed(textToolBtn);
@@ -53,9 +60,12 @@ function setup() {
     selectTool.mousePressed(selectToolBtn);
 
     radio = createRadio();
-    radio.style('width', 'auto');
+    radio.class('layer');
     radio.changed(radioUpdate);
+    radio.parent('app');
 
+    tool = tools.text;
+    tool.start();
 }
 
 function draw() {
@@ -63,9 +73,6 @@ function draw() {
     if (layers.length > 0) {
         layers.forEach((layer, index) => {
             layer.draw();
-            if (!radio.selected(`${index}`)) {
-                radio.option(index, index + " - " + layer.params.text);
-            }
         })
     }
     if (tool == tools.selection) {
@@ -92,7 +99,6 @@ function msClicked() {
 
 function textToolBtn() {
     tool = tools.text;
-    tool.start();
 }
 
 function selectToolBtn() {
@@ -101,16 +107,47 @@ function selectToolBtn() {
 }
 
 function selectLayer() {
-    layers[radio.value()? radio.value().charAt(0) : 0].params.position = createVector(mouseX, mouseY);
-    layerHighlight();
+    let info = nearestLayer();
+    let nearest = info[0];
+    let distance = info[1];
+
+    let yDistance = nearest.params.position.y - mouseY;
+    if (distance < nearest.params.text.length * 15) {
+        if (nearest.params.stroke == 5) {
+            nearest.params.position = createVector(mouseX, mouseY);
+            layerHighlight(nearest);
+        } else if (yDistance < nearest.params.size && yDistance > -nearest.params.size * 0.25) {
+            nearest.params.position = createVector(mouseX, mouseY);
+            layerHighlight(nearest);
+        }
+    } else {
+        layers.forEach(layer => {
+            layer.params.stroke = 0;
+        });
+    }
+    let value = layers.indexOf(nearest);
+    radio.selected(`${value} ${nearest.params.text}`);
 }
 
-function layerHighlight(removeAll) {
+function nearestLayer() {
+    let nearest;
+    let distance;
+    layers.forEach(layer => {
+        let pos = layer.params.position;
+        if (createVector(mouseX, mouseY).dist(createVector(pos.x, pos.y)) < distance || !nearest) {
+            nearest = layer;
+            distance = createVector(mouseX, mouseY).dist(createVector(pos.x, pos.y));
+        }
+    });
+    return [nearest, distance] ;
+}
+
+function layerHighlight(layer) {
     layers.forEach(layer => {
         layer.params.stroke = 0;
     });
-    if (removeAll != true) {
-        layers[radio.value()? radio.value().charAt(0) : 0].params.stroke = 5;
+    if (layer) {
+        layer.params.stroke = 5;
     }
 }
 
@@ -131,7 +168,7 @@ function createText(x, y) {
         params: {...tool.params}
     }
     layers.push(layer);
-    radio.value(`${layers.length}`);
+    radio.option(layers.length + ' ' + layer.params.text);
     selectToolBtn();
     mouseDown = false;
 }
@@ -169,8 +206,6 @@ function textToolStart() {
 
     textInput = createInput('word')
     textInput.input(textInputed);
-
-    layerHighlight(true);
 }
 
 function selectToolStart() {
@@ -178,9 +213,9 @@ function selectToolStart() {
 }
 
 function resetElements() {
-    removeElements();
-    textTool = createButton('T');
-    textTool.mousePressed(textToolBtn);
-    selectTool = createButton('S');
-    selectTool.mousePressed(selectToolBtn);
+    // removeElements();
+    // textTool = createButton('T');
+    // textTool.mousePressed(textToolBtn);
+    // selectTool = createButton('S');
+    // selectTool.mousePressed(selectToolBtn);
 }

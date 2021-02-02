@@ -1,0 +1,22 @@
+.canvas {
+    float: left;
+    top: 0px;
+    left: 0px;
+}
+
+.layers {
+    background-color: rebeccapurple;
+}
+
+.layer {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    height: min-content;
+    grid-auto-rows: minmax(20px, auto);
+}
+
+.app {
+    background-color: powderblue;
+    display: flex;
+    /* justify-content: space-between; */
+}
