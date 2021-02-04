@@ -12,7 +12,7 @@ const fonts = [
     "Brush Script MT"
 ]
 
-const tools = {
+var tools = {
     selection: {
         action: selectLayer,
         start: selectToolStart,
@@ -48,24 +48,12 @@ function setup() {
     canvas.addClass('canvas');
     canvas.mousePressed(msClicked);
 
-    // let layers = createDiv();
-    // layers.parent('app');
-    // layers.addClass('layers');
-    // layers.id('layers');
-
-    textTool = createButton('T');
-    textTool.mousePressed(textToolBtn);
-
-    selectTool = createButton('S');
-    selectTool.mousePressed(selectToolBtn);
-
     radio = createRadio();
     radio.class('layer');
     radio.changed(radioUpdate);
     radio.parent('app');
 
-    tool = tools.text;
-    tool.start();
+    resetElements();
 }
 
 function draw() {
@@ -120,13 +108,33 @@ function selectLayer() {
             nearest.params.position = createVector(mouseX, mouseY);
             layerHighlight(nearest);
         }
+        tools.text.params = nearest.params;
+        nearest.settings();
     } else {
         layers.forEach(layer => {
             layer.params.stroke = 0;
         });
+        resetElements();
     }
     let value = layers.indexOf(nearest);
-    radio.selected(`${value} ${nearest.params.text}`);
+    setRadioOptions();
+}
+
+function setRadioOptions(command) {
+    if (command === 'remove') {
+        layers.forEach((layer, index) => {
+            radio.remove(`${index + 1} ${layer.params.text}`);
+        })
+    } else if (command === 'set') {
+        layers.forEach((layer, index) => {
+            radio.remove(`${index + 1} ${layer.params.text}`);
+        })
+    
+        layers.forEach((layer, index) => {
+            radio.option(`${index + 1} ${layer.params.text}`);
+        })
+    }
+    
 }
 
 function nearestLayer() {
@@ -156,6 +164,9 @@ function createText(x, y) {
     tools.text.params.position = createVector(x, y);
 
     let layer = { 
+        settings: function() {
+            textToolStart();
+        },
         draw: function() {
             stroke(255, 255, 200);
             strokeWeight(this.params.stroke);
@@ -187,7 +198,9 @@ function sizeSelected() {
 }
 
 function textInputed() {
+    setRadioOptions('remove');
     tools.text.params.text = textInput.value();
+    setRadioOptions('set');
 }
 
 function textToolStart() {
@@ -198,13 +211,13 @@ function textToolStart() {
     })
     fontSelect.changed(fontSelected);
 
-    colorSelect = createColorPicker('black');
+    colorSelect = createColorPicker(tools.text.params.color);
     colorSelect.changed(colorSelected);
 
-    sizeSelect = createSlider(1, 100, 50);
+    sizeSelect = createSlider(1, 100, tools.text.params.size);
     sizeSelect.changed(sizeSelected);
 
-    textInput = createInput('word')
+    textInput = createInput(tools.text.params.text)
     textInput.input(textInputed);
 }
 
@@ -213,9 +226,11 @@ function selectToolStart() {
 }
 
 function resetElements() {
-    // removeElements();
-    // textTool = createButton('T');
-    // textTool.mousePressed(textToolBtn);
-    // selectTool = createButton('S');
-    // selectTool.mousePressed(selectToolBtn);
+    removeElements();
+    textTool = createButton('T');
+    textTool.mousePressed(textToolBtn);
+
+    selectTool = createButton('S');
+    selectTool.mousePressed(selectToolBtn);
+
 }
